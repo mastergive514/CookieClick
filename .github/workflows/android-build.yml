@@ -1,0 +1,73 @@
+name: Build raylib for Android
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build raylib for Android
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v2
+      with:
+        sdk-version: '33'  # or any version you need
+        ndk-version: '25.2.9519653'  # or any version you need
+        build-tools-version: '33.0.0'  # or any version you need
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build
+        
+    - name: Set up raylib
+      run: |
+        git clone https://github.com/raylib/raylib.git
+        cd raylib
+        mkdir -p build/android
+        cd build/android
+        cmake -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+              -DANDROID_ABI=armeabi-v7a \
+              -DANDROID_NATIVE_API_LEVEL=21 \
+              -DANDROID_STL=c++_shared \
+              -DANDROID_PLATFORM=android-21 \
+              -DANDROID_TOOLCHAIN=clang \
+              -DCMAKE_BUILD_TYPE=Release \
+              ..
+        cmake --build .
+
+    - name: Build Project
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. \
+              -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+              -DANDROID_ABI=armeabi-v7a \
+              -DANDROID_NATIVE_API_LEVEL=21 \
+              -DANDROID_STL=c++_shared \
+              -DANDROID_PLATFORM=android-21 \
+              -DANDROID_TOOLCHAIN=clang \
+              -DCMAKE_BUILD_TYPE=Release
+        cmake --build .
+      
+    - name: Package APK
+      run: |
+        cd path_to_your_android_project
+        ./gradlew assembleRelease
+        mkdir -p output
+        cp app/build/outputs/apk/release/app-release.apk output/
+    
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-apk
+        path: output/app-release.apk
