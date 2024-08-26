@@ -31,7 +31,7 @@ jobs:
         
     - name: Set up raylib
       run: |
-        git clone https://github.com/raylib/raylib.git
+        git clone https://github.com/raysan5/raylib.git
         cd raylib
         mkdir -p build/android
         cd build/android
